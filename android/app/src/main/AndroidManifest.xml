@@ -1,0 +1,93 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Live tracking while a load is on the van (PRD 21). Every one of these is load-bearing, and
+      getting any of them wrong fails silently — the app runs, the map moves on his phone, and UKO
+      simply never hears from him until the watchdog calls him missing.
+
+        INTERNET                    the API
+        ACCESS_FINE_LOCATION        GPS, not the coarse network fix — the trail has to place a van on a
+                                    road, and the admin Safety board measures it against the
+                                    shelf → shelf line in kilometres
+        ACCESS_COARSE_LOCATION      asked for alongside fine; Android may grant only this one, and a
+                                    coarse fix that keeps arriving still beats silence
+        FOREGROUND_SERVICE          the service that keeps the fixes coming with the screen off, which
+                                    is where a phone spends a six-hour drive
+        FOREGROUND_SERVICE_LOCATION Android 14+ requires the *typed* permission as well; without it the
+                                    service is refused at start-up on a new handset
+        WAKE_LOCK                   holds the CPU awake between fixes
+
+      This matters more here than on the rider app, not less: a rider is out of contact for twenty
+      minutes, a driver for six hours on the Nairobi–Mombasa road with somebody else's goods in the
+      back. The watchdog windows are correspondingly longer (20 / 60 minutes, `config.py`), which means
+      a broken service goes unnoticed for an hour rather than half an hour.
+
+      Deliberately NOT here: ACCESS_BACKGROUND_LOCATION. A foreground service with an ongoing
+      notification covers everything the driver needs, and background location triggers Play Store's
+      prominent-disclosure review for no gain — we never track him when he has no load.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- A driver with no GPS chip cannot do this job, but the app must still install on his phone to
+         tell him so rather than vanishing from the Play Store listing. -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+
+    <application
+        android:label="UKO courier"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+
+    <queries>
+        <!-- Required to query activities that can process text, see:
+             https://developer.android.com/training/package-visibility -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher: Google Maps directions to a shelf in a county he has never driven to, and
+             phoning the shelf owner when he gets there. Without these the launcher reports "no app can
+             handle this" on Android 11+. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
+    </queries>
+</manifest>

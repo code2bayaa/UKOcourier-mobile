@@ -1,0 +1,28 @@
+name: uko_courier
+description: >
+  UKO courier — the driver's app. The job board of inter-city legs he is allowed to carry, the two
+  shelf hand-over codes, live GPS from accept until the far shelf signs for the load, his wallet and
+  his goods cover. Talks to the courier API (courier/back-end, port 8016).
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Everything shared with the delivery app: the HTTP client, the two-step sign-in, the tracker, the
+  # theme and the widgets. Kept at mobile/uko_core so neither app owns it.
+  uko_core:
+    path: ../../../mobile/uko_core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
